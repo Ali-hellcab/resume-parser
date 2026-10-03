@@ -1,0 +1,13 @@
+# CPU-only PyTorch wheels (~200MB instead of ~2GB+ CUDA builds) - essential for the 1GB limit
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+
+streamlit>=1.40
+pdfplumber>=0.11
+python-docx>=1.1
+easyocr>=1.7.2
+faster-whisper>=1.0.3
+groq>=0.13
+pydantic>=2.7
+Pillow>=10.3
