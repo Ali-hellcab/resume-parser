@@ -12,13 +12,16 @@ DEPLOYING TO STREAMLIT COMMUNITY CLOUD
        app.py
        requirements.txt
 2. Get a free Groq API key at https://console.groq.com/keys
-3. Go to https://share.streamlit.io -> "Create app" -> "Deploy a public app
+3. For local development, create `.streamlit/secrets.toml` with:
+       GROQ_API_KEY = "gsk_your_key_here"
+   This file is gitignored; do not add the key directly to this source file.
+4. Go to https://share.streamlit.io -> "Create app" -> "Deploy a public app
    from GitHub". Choose your repo, branch, and set "Main file path" to app.py.
-4. Before deploying, open "Advanced settings" and:
+5. Before deploying, open "Advanced settings" and:
      - choose Python 3.11 (best wheel support for torch/easyocr)
      - paste into the Secrets box:
            GROQ_API_KEY = "gsk_your_key_here"
-5. Click Deploy. The first build takes several minutes (torch + easyocr).
+6. Click Deploy. The first build takes several minutes (torch + easyocr).
    Never commit your API key to GitHub; use Secrets only.
 
 MEMORY NOTES (Community Cloud gives roughly 1GB RAM):
@@ -39,6 +42,7 @@ from io import BytesIO
 from typing import List
 
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 # ----------------------------- Configuration --------------------------------
@@ -154,7 +158,7 @@ def extract_text(name: str, data: bytes) -> str:
 def get_api_key() -> str:
     try:
         return st.secrets["GROQ_API_KEY"]
-    except Exception:
+    except (KeyError, StreamlitSecretNotFoundError):
         return os.environ.get("GROQ_API_KEY", "")
 
 
@@ -191,15 +195,12 @@ st.title("📄 Multimodal Resume Parsing Agent")
 st.caption("Upload a PDF, DOCX, image, or audio resume. Review and edit the extracted fields.")
 
 api_key = get_api_key()
-if not api_key:
-    api_key = st.text_input("Groq API key", type="password",
-                            help="Or set GROQ_API_KEY in Streamlit secrets.")
 
 uploaded = st.file_uploader("Upload resume", type=["pdf", "docx", "png", "jpg", "jpeg", "mp3", "wav"])
 
 if uploaded and st.button("Extract information", type="primary"):
     if not api_key:
-        st.error("Please provide a Groq API key.")
+        st.error("GROQ_API_KEY is not configured. Add it to Streamlit secrets or set it as an environment variable.")
     elif uploaded.size > MAX_FILE_MB * 1024 * 1024:
         st.error(f"File too large (limit {MAX_FILE_MB} MB).")
     else:
